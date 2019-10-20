@@ -1,3 +1,17 @@
+DROP TABLE IF EXISTS Updates CASCADE;
+DROP TABLE IF EXISTS Rewards CASCADE;
+DROP TABLE IF EXISTS Feedback CASCADE;
+DROP TABLE IF EXISTS Wallets CASCADE;
+DROP TABLE IF EXISTS Searches CASCADE;
+DROP TABLE IF EXISTS SearchHistory CASCADE;
+DROP TABLE IF EXISTS Creates CASCADE;
+DROP TABLE IF EXISTS Transactions CASCADE;
+DROP TABLE IF EXISTS Backs CASCADE;
+DROP TABLE IF EXISTS Likes CASCADE;
+DROP TABLE IF EXISTS Follows CASCADE;
+DROP TABLE IF EXISTS Projects CASCADE;
+DROP TABLE IF EXISTS Users CASCADE;
+
 CREATE TABLE Users (
     user_id serial PRIMARY KEY,
 	email varchar(255) NOT NULL UNIQUE,
@@ -21,29 +35,28 @@ CREATE TABLE Follows (
 
 CREATE TABLE Likes (
     user_id int REFERENCES Users(user_id),
-    project_id int REFERENCES Projects(project_id),
-    CONSTRAINT likes_constraint PRIMARY KEY(user_id, project_id)
+    project_name varchar(255) REFERENCES Projects(project_name),
+    CONSTRAINT likes_constraint PRIMARY KEY(user_id, project_name)
+);
+
+CREATE TABLE Transactions (
+    transaction_id serial PRIMARY KEY,
+    amount numeric(20,2) NOT NULL
 );
 
 CREATE TABLE Backs (
     user_id int REFERENCES Users(user_id),
-    project_id int REFERENCES Projects(project_id),
+    project_name varchar(255) REFERENCES Projects(project_name),
     transaction_id int REFERENCES Transactions(transaction_id),
-        back_date datetime NOT NULL,
-    CONSTRAINT backs_constraint PRIMARY KEY(user_id, project_id, transaction_id)
-);
-
-CREATE TABLE Transactions (
-    transacton_id serial PRIMARY KEY,
-    back_id int REFERENCES Backs(backs_id),
-    amount numeric(20,2) NOT NULL
+        back_date timestamp NOT NULL,
+    CONSTRAINT backs_constraint PRIMARY KEY(user_id, project_name, transaction_id)
 );
 
 CREATE TABLE Creates (
-    project_name int REFERENCES Projects(project_name),
+    project_name varchar(255) REFERENCES Projects(project_name),
     user_id int REFERENCES Users(user_id),
-    create_date datetime NOT NULL,
-    CONSTRAINT creates_constraint PRIMARY KEY(user_id, project_id)
+    create_date timestamp NOT NULL,
+    CONSTRAINT creates_constraint PRIMARY KEY(user_id, project_name)
 );
 
 CREATE TABLE SearchHistory (
