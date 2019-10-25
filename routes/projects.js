@@ -18,8 +18,6 @@ const pool = new Pool({
 
 module.exports = router;
 
-/* SQL Query */
-
 router.get("/", function(req, res, next) {
   var sql_query = "SELECT * FROM Projects";
   pool.query(sql_query, (error, data) => {
