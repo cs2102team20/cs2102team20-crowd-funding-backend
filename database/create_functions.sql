@@ -33,6 +33,28 @@ BEGIN
 END; $$
 LANGUAGE PLPGSQL;
 
+CREATE OR REPLACE PROCEDURE topup_wallet (
+    user_email varchar(255),
+    new_wallet_amount numeric,
+    topup_amount numeric
+)
+LANGUAGE PLPGSQL
+AS $$
+    DECLARE
+        variable integer;
+    BEGIN
+        UPDATE Wallets SET amount = new_wallet_amount
+            WHERE email = user_email;
+
+        INSERT INTO Transactions (transaction_id, amount, transaction_date)
+            VALUES (DEFAULT, topup_amount, LOCALTIMESTAMP)
+            RETURNING transaction_id INTO variable;
+
+        INSERT INTO TopUpFunds (transaction_id, email) VALUES
+            (variable, user_email);
+    END
+$$;
+
 -- Helper function to check if wallet has sufficient value
 CREATE OR REPLACE FUNCTION wallet_sufficient (
     user_email varchar(255),

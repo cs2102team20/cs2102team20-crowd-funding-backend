@@ -14,6 +14,7 @@ const pool = new Pool({
 pool.connect();
 
 router.post("/", function(req, res, next) {
+  console.log("at login");
   var email = req.body.email;
   var password_hash = req.body.password_hash;
 
@@ -24,7 +25,7 @@ router.post("/", function(req, res, next) {
       res.status(500).send("Internal Server Error.");
     } else {
       // There exists NO users entry with the given username and password.
-      if (data.rows[0].count === "0") {
+      if (data.rows.count === "0") {
         res.status(404).send("Invalid User.");
       } else {
         // There exists a user entry with the given username and password.
