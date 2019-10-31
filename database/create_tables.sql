@@ -27,13 +27,17 @@ CREATE TABLE Users (
 CREATE TABLE Projects (
     project_name varchar(255) PRIMARY KEY,
     project_description text,
-    project_deadline timestamp,
     project_category varchar(255),
-    project_funding_goal integer ,
-    project_current_funding integer DEFAULT 0, 
     project_image_url varchar(255),
-    email varchar(255) REFERENCES Users(email) ON DELETE CASCADE,
+    email varchar(255) REFERENCES Users(email) ON DELETE CASCADE
+);
+
+CREATE TABLE Fund_info(
+    project_name varchar(255) REFERENCES Projects(project_name) ON DELETE CASCADE,
+    project_deadline timestamp,
+    project_funding_goal integer,
     CONSTRAINT positive_goal CHECK(project_funding_goal > 0)
+
 );
 
 CREATE TABLE Follows (
