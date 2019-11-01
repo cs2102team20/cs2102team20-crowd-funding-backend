@@ -55,6 +55,31 @@ AS $$
     END
 $$;
 
+CREATE OR REPLACE PROCEDURE transfer_from_wallet (
+    sender_email varchar(255),
+    receiver_email varchar(255),
+    transfer_amount numeric
+)
+LANGUAGE PLPGSQL
+AS $$
+    DECLARE
+        transactionId integer;
+    BEGIN
+        UPDATE Wallets SET amount = amount - transfer_amount
+            WHERE email = sender_email;
+
+        UPDATE Wallets SET amount = amount + transfer_amount
+            WHERE email = receiver_email;
+
+        INSERT INTO Transactions (transaction_id, amount, transaction_date)
+            VALUES (DEFAULT, transfer_amount, LOCALTIMESTAMP)
+            RETURNING transaction_id INTO transactionId;
+
+        INSERT INTO TransferFunds (transaction_id, email_transferer, email_transfee) VALUES
+            (transactionId, sender_email, receiver_email);
+    END
+$$;
+
 -- Helper function to check if wallet has sufficient value
 CREATE OR REPLACE FUNCTION wallet_sufficient (
     user_email varchar(255),
