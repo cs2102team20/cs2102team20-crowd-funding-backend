@@ -21,12 +21,13 @@ router.post("/", function(req, res, next) {
   var projectFundingGoal = req.body.projectFundingGoal;
   var projectDescription = req.body.projectDescription;
   var projectRewards = req.body.projectRewards;
+  var creatorEmail = req.body.creatorEmail;
 
   /* --- Query: Insertion into Projects --- */
   const queryProjects = "INSERT INTO projects (project_name, project_description, project_deadline, " +
       "project_category, project_funding_goal, project_current_funding, project_image_url, email) VALUES ('" +
       projectName + "', '" + projectDescription + "', '" + projectDeadline + "','" + projectCategory + "', '" +
-      projectFundingGoal + "', '0', '" + projectImageUrl + "', 'babi@example.com')";
+      projectFundingGoal + "', '0', '" + projectImageUrl + "','" + creatorEmail + "')";
 
   /* --- Query: Insertion into Rewards --- */
   var queryRewards = "INSERT INTO rewards (project_name, reward_name, reward_pledge_amount, reward_description, " +
@@ -55,6 +56,17 @@ router.post("/", function(req, res, next) {
     }
   });
 
+});
+
+router.get("/", function(req, res, next) {
+   const query = "SELECT project_name FROM projects";
+   pool.query(query, (error, data) => {
+       if (error) {
+           res.status(500).send("Failed to retrieve project names.");
+       } else {
+           res.status(200).send(data.rows);
+       }
+   })
 });
 
 module.exports = router;
