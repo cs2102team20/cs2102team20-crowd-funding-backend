@@ -64,3 +64,20 @@ router.post("/insert", function(req, res, next) {
     }
   });
 });
+
+router.post("/register", function(req, res, next) {
+  var name = req.body.name;
+  var email = req.body.email;
+  var contact = req.body.contact;
+  var password = req.body.password;
+
+  var query = `CALL register('${email}','${name}','${contact}','${password}')`;
+
+  pool.query(query, (error, data) => {
+    if (error) {
+      res.send(error);
+    } else {
+      res.send("success");
+    }
+  });
+});
