@@ -93,9 +93,9 @@ BEGIN
     SELECT T.transaction_id, T.amount, B.email
         FROM transactions AS T, backingfunds AS B
         WHERE T.transaction_id = B.transaction_id
-            AND email = user_email
-            AND project_name = project_backed_name
-            AND reward_name = reward_backed_name;
+            AND B.email = user_email
+            AND B.project_name = project_backed_name
+            AND B.reward_name = reward_backed_name;
 
     /* Create new transaction */
     /* Handle transfer of credit from project back to user */
