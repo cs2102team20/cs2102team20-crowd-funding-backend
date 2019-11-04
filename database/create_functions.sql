@@ -216,15 +216,14 @@ AS $$ BEGIN
 -- Procedure for Search
 CREATE OR REPLACE PROCEDURE search (
     user_email varchar(255),
-    search_timestamp timestamp,
     search_text varchar(255)
 )
 AS $$ BEGIN
     INSERT INTO SearchHistory(email,search_timestamp,search_text) VALUES (
-        user_email,current_timestamp,search_text
+        user_email,LOCALTIMESTAMP,search_text
     );
     INSERT INTO Searches(email,search_timestamp) VALUES (
-        user_email,current_timestamp
+        user_email,LOCALTIMESTAMP
     );
 
     END;
