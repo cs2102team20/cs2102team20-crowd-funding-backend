@@ -13,7 +13,7 @@ const pool = new Pool({
   // port: 5432,
 });
 
-router.get("/", function(req, res, next) {
+router.get("/headers", function(req, res, next) {
   var sql_query = "SELECT * FROM Projects WHERE false";
   pool.query(sql_query, (err, data) => {
     res.send(data);
