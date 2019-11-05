@@ -83,15 +83,17 @@ CREATE OR REPLACE FUNCTION check_create_feedback () RETURNS trigger
 AS $$ BEGIN
     IF user_is_creator_of_project_receiving_feedback(NEW.project_name, NEW.email) THEN
         RAISE EXCEPTION 'Creator of project cannot give feedback on their own project.';
+    ELSE
+        RAISE NOTICE 'Good: Feedbacker is not creator of the project';
     END IF;
 
-    RAISE NOTICE 'Created feedback!';
+    IF user_has_backed_project(NEW.project_name, NEW.email) != true THEN
+        RAISE EXCEPTION 'User has not backed the project';
+    ELSE
+        RAISE NOTICE 'Good: Feedbacker is has previously backed the project';
+    END IF;
 
     /*
-    IF user_has_backed_project(NEW.email, NEW.project_name) != true THEN
-        RAISE EXCEPTION 'User has not backed the project';
-    END IF;
-
     IF project_backed_is_fully_funded() != true THEN
         RAISE EXCEPTION 'Project is not successfully funded'
     END IF
@@ -123,6 +125,24 @@ BEGIN
 END; $$
 LANGUAGE PLPGSQL;
 
+CREATE OR REPLACE FUNCTION user_has_backed_project (
+    varchar(255), varchar(255)) RETURNS boolean
+AS $$
+DECLARE
+    _result_count integer;
+BEGIN
+    EXECUTE format('SELECT COUNT(*) FROM backingfunds ' ||
+     'WHERE project_name = ''%s'' AND email = ''%s'';', $1, $2)
+        INTO _result_count;
+    IF _result_count THEN
+        RETURN true;
+    ELSE
+        RETURN false;
+    END IF;
+END; $$
+LANGUAGE PLPGSQL;
+
 DROP TRIGGER IF EXISTS check_create_feedback ON Feedbacks;
 CREATE TRIGGER check_create_feedback BEFORE INSERT ON Feedbacks
     FOR EACH ROW EXECUTE PROCEDURE check_create_feedback();
+
