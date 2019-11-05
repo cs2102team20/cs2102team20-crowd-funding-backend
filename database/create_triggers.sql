@@ -82,25 +82,30 @@ LANGUAGE PLPGSQL;
 CREATE OR REPLACE FUNCTION check_create_feedback () RETURNS trigger
 AS $$ BEGIN
     IF user_is_creator_of_project_receiving_feedback(NEW.project_name, NEW.email) THEN
-        RAISE EXCEPTION 'Creator of project cannot give feedback on their own project.';
+        RAISE EXCEPTION 'Bad: Creator of project cannot give feedback on their own project.';
     ELSE
         RAISE NOTICE 'Good: Feedbacker is not creator of the project';
     END IF;
 
     IF user_has_backed_project(NEW.project_name, NEW.email) != true THEN
-        RAISE EXCEPTION 'User has not backed the project';
+        RAISE EXCEPTION 'Bad: User has not backed the project';
     ELSE
         RAISE NOTICE 'Good: Feedbacker is has previously backed the project';
+    END IF;
+
+    IF project_backed_is_live(NEW.project_name) THEN
+        RAISE EXCEPTION 'Bad: Project is still ongoing.';
+    ELSE
+        RAISE NOTICE 'Good: Project has ended';
     END IF;
 
     /*
     IF project_backed_is_fully_funded() != true THEN
         RAISE EXCEPTION 'Project is not successfully funded'
+    ELSE
+        RAISE NOTICE 'Good: Project is fully funded'
     END IF
 
-    IF project_backed_is_live() THEN
-        RAISE EXCEPTION 'Project is still ongoing.'
-    END IF
     */
 
     RETURN NEW;
@@ -135,6 +140,23 @@ BEGIN
      'WHERE project_name = ''%s'' AND email = ''%s'';', $1, $2)
         INTO _result_count;
     IF _result_count THEN
+        RETURN true;
+    ELSE
+        RETURN false;
+    END IF;
+END; $$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION project_backed_is_live (
+    varchar(255)) RETURNS boolean
+AS $$
+DECLARE
+    _is_live integer;
+BEGIN
+    EXECUTE format('SELECT COUNT(*) FROM Projects WHERE ' ||
+     'project_deadline > NOW() AND project_name = ''%s'';', $1)
+        INTO _is_live;
+    IF _is_live THEN
         RETURN true;
     ELSE
         RETURN false;
