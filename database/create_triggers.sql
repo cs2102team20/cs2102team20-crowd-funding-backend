@@ -1,3 +1,4 @@
+/* --- Creating Project --- */
 CREATE OR REPLACE FUNCTION check_create_project () RETURNS trigger
 AS $$ BEGIN
     IF created_project_more_than_n_days(NEW.email, 3) THEN
@@ -77,44 +78,51 @@ BEGIN
 END; $$
 LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE FUNCTION check_backing () RETURNS TRIGGER
-AS $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM Projects P WHERE NEW.email = P.email AND NEW.project_name = P.project_name) THEN
-        RAISE EXCEPTION 'User % cannot back own project %', NEW.email, NEW.project_name;
+/* --- Creating Feedback --- */
+CREATE OR REPLACE FUNCTION check_create_feedback () RETURNS trigger
+AS $$ BEGIN
+    IF user_is_creator_of_project_receiving_feedback(NEW.project_name, NEW.email) THEN
+        RAISE EXCEPTION 'Creator of project cannot give feedback on their own project.';
     END IF;
 
-    IF EXISTS (SELECT 1 FROM Projects P WHERE NEW.project_name = P.project_name AND LOCALTIMESTAMP >= P.project_deadline) THEN
-        RAISE EXCEPTION 'Cannot back a project that is past its deadline.';
+    RAISE NOTICE 'Created feedback!';
+
+    /*
+    IF user_has_backed_project(NEW.email, NEW.project_name) != true THEN
+        RAISE EXCEPTION 'User has not backed the project';
     END IF;
 
-    IF EXISTS (SELECT 1 FROM Transactions T WHERE NEW.transaction_id = T.transaction_id AND T.amount < 0) THEN
-        RAISE EXCEPTION 'Cannot back a project with < $0.';
-    END IF;
+    IF project_backed_is_fully_funded() != true THEN
+        RAISE EXCEPTION 'Project is not successfully funded'
+    END IF
 
-    IF (SELECT NOT wallet_sufficient(NEW.email, T.amount) FROM Transactions T WHERE New.transaction_id = T.transaction_id) THEN
-        RAISE EXCEPTION 'Insufficient money in wallet for %.', NEW.email;
-    END IF;
+    IF project_backed_is_live() THEN
+        RAISE EXCEPTION 'Project is still ongoing.'
+    END IF
+    */
 
     RETURN NEW;
-
 END; $$
 LANGUAGE PLPGSQL;
 
-DROP TRIGGER IF EXISTS check_create_backingfund ON BackingFunds;
-CREATE TRIGGER  check_create_backingfund BEFORE INSERT ON BackingFunds
-    FOR EACH ROW EXECUTE PROCEDURE checK_backing();
+CREATE OR REPLACE FUNCTION user_is_creator_of_project_receiving_feedback (
+    varchar(255), varchar(255)) RETURNS boolean
+AS $$
+DECLARE
+    _result_count integer;
+BEGIN
+    EXECUTE format('SELECT COUNT(P.project_name) FROM Projects AS P
+        WHERE P.project_name = ''%s''
+        AND P.email = ''%s'';', $1, $2)
+        INTO _result_count;
+    IF _result_count THEN
+        RETURN true;
+    ELSE
+        RETURN false;
+    END IF;
+END; $$
+LANGUAGE PLPGSQL;
 
-/* Test cases for Trigger */
-DROP IF EXISTS FROM Transactions WHERE transaction_id=1;
-DROP IF EXISTS FROM Transactions WHERE transaction_id=2;
-DROP IF EXISTS FROM Transactions WHERE transaction_id=3;
-
-INSERT INTO Transactions VALUES (1, 1, LOCALTIMESTAMP);
-INSERT INTO Transactions VALUES (2, -1, LOCALTIMESTAMP);
-INSERT INTO Transactions VALUES (3, 1000, LOCALTIMESTAMP);
-
-INSERT INTO BackingFunds VALUES (1, 'abi@example.com', 'Project 1', null);
-INSERT INTO BackingFunds VALUES (1, 'abi@example.com', 'Project 3', null);
-INSERT INTO BackingFunds VALUES (2, 'abi@example.com', 'Project 2', null);
-INSERT INTO BackingFunds VALUES (3, 'abi@example.com', 'Project 2', null);
+DROP TRIGGER IF EXISTS check_create_feedback ON Feedbacks;
+CREATE TRIGGER check_create_feedback BEFORE INSERT ON Feedbacks
+    FOR EACH ROW EXECUTE PROCEDURE check_create_feedback();
