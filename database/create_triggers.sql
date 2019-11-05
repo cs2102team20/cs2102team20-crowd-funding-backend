@@ -87,6 +87,9 @@ AS $$ BEGIN
         RAISE NOTICE 'Good: Feedbacker is not creator of the project';
     END IF;
 
+    RAISE NOTICE 'New.project_name = %', New.project_name;
+    RAISE NOTICE 'New.email = %', New.email;
+
     IF user_has_backed_project(NEW.project_name, NEW.email) != true THEN
         RAISE EXCEPTION 'Bad: User has not backed the project';
     ELSE
@@ -99,14 +102,11 @@ AS $$ BEGIN
         RAISE NOTICE 'Good: Project has ended';
     END IF;
 
-    /*
-    IF project_backed_is_fully_funded() != true THEN
-        RAISE EXCEPTION 'Project is not successfully funded'
+    IF project_backed_is_fully_funded(New.project_name) != true THEN
+        RAISE EXCEPTION 'Bad: Project is not successfully funded';
     ELSE
-        RAISE NOTICE 'Good: Project is fully funded'
-    END IF
-
-    */
+        RAISE NOTICE 'Good: Project is fully funded';
+    END IF;
 
     RETURN NEW;
 END; $$
@@ -139,7 +139,7 @@ BEGIN
     EXECUTE format('SELECT COUNT(*) FROM backingfunds ' ||
      'WHERE project_name = ''%s'' AND email = ''%s'';', $1, $2)
         INTO _result_count;
-    IF _result_count THEN
+    IF _result_count > 0 THEN
         RETURN true;
     ELSE
         RETURN false;
@@ -161,6 +161,37 @@ BEGIN
     ELSE
         RETURN false;
     END IF;
+END; $$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION project_backed_is_fully_funded (
+    varchar(255)) RETURNS boolean
+AS $$
+DECLARE
+    _project_funding_goal integer;
+BEGIN
+    EXECUTE format('SELECT project_funding_goal FROM Projects WHERE ' ||
+     'project_name = ''%s'';', $1)
+        INTO _project_funding_goal;
+
+    IF project_current_funding($1) < _project_funding_goal THEN
+        RETURN false;
+    ELSE
+        RETURN true;
+    END IF;
+END; $$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION project_current_funding (varchar(255)) RETURNS numeric
+AS $$
+DECLARE
+    _current_funding numeric;
+BEGIN
+    EXECUTE format('SELECT SUM(T.amount) FROM Backingfunds AS B, Transactions AS T' ||
+    ' WHERE T.transaction_id = B.transaction_id AND B.project_name = ''%s'';', $1)
+     INTO _current_funding;
+
+    RETURN _current_funding;
 END; $$
 LANGUAGE PLPGSQL;
 
