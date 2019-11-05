@@ -1,9 +1,21 @@
-DELETE FROM users;
-DELETE FROM projects;
-DELETE FROM rewards;
-DELETE FROM updates;
-DELETE FROM comments;
-DELETE FROM wallets;
+DELETE FROM Backingfund;
+DELETE FROM Comments;
+DELETE FROM Creates;
+DELETE FROM Feedbacks;
+DELETE FROM Follows;
+DELETE FROM Likes;
+DELETE FROM Projects;
+DELETE FROM Rewards;
+DELETE FROM Searches;
+DELETE FROM Searchhistory;
+DELETE FROM Topupfunds;
+DELETE FROM Transactions;
+DELETE FROM Transactions_Transaction_Id_Sq;
+DELETE FROM Transferfunds;
+DELETE FROM Updates;
+DELETE FROM Users;
+DELETE FROM Wallets;
+
 
 -- INSERT INTO users
 --     (email, full_name, phone_number, password_hash) VALUES
@@ -16,6 +28,8 @@ CALL register('abi@example.com', 'Abi Dabhi', '91919292', 'stringpass_abi', loca
 CALL register('babi@example.com', 'Babi Dabhi', '91919293', 'stringpass_babi', localtimestamp - interval '37 days', localtimestamp - interval '2 days');
 CALL register('cabi@example.com', 'Cabi Dabhi', '91919294', 'stringpass_cabi', localtimestamp - interval '38 days', localtimestamp - interval '2 days');
 CALL register('test@test.com', 'Test Man', '9', 'test');
+
+UPDATE Wallets SET amount = 50000;
 
 INSERT INTO projects
     (project_name, project_description, project_deadline,
@@ -196,13 +210,26 @@ INSERT INTO comments
      'wait to receive it. Looks an incredible design.',
     '2019-06-02 13:00:56.874028', 'cabi@example.com');
 
-INSERT INTO wallets
-    (email, amount) VALUES
-    ('abi@example.com', 4000),
-    ('babi@example.com', 6000),
-    ('cabi@example.com', 4000),
-    ('test@test.com', 500000);
-
 -- Insert Transactions and Backings
 SELECT backs('test@test.com', 'Animal Abstraction Canvas Painting', 'ART Piece - Lion', 5000);
-SELECT backs('test@test.com', 'Animal Abstraction Canvas Painting', 'ART Piece - Cat', 3000);
+SELECT backs('test@test.com', 'Medical Tissue Pro', 'Used Tissue (with flu)', 5000);
+SELECT backs('abi@example.com', 'Medical Tissue Pro', 'Used Tissue (with flu)', 3000);
+SELECT backs('abi@example.com', 'Spinning Table Top', 'Early Bird Spinning Table Top', 2000);
+SELECT backs('test@test.com', 'Spinning Table Top', 'Early Bird Spinning Table Top', 2000);
+
+-- This should fail as Triathelete Mouse is a project that belongs that to feedbacker.
+CALL create_feedback('Triathlete Mouse', 'This is the most awesome project I have ever backed', 4, 'test@test.com');
+
+-- This should fail as project is still live.
+CALL create_feedback('Medical Tissue Pro', 'This is the most awesome project I have ever backed', 3, 'test@test.com');
+
+-- This should fail as project is still live
+CALL create_feedback('Medical Tissue Pro', 'This is the most awesome project I have ever backed', 3, 'abi@example.com');
+
+-- This should fail as project has not reach funding goal, $500 short
+CALL create_feedback('Spinning Table Top', 'This is the most awesome project I have ever backed', 3, 'test@test.com');
+
+SELECT backs('test@test.com', 'Spinning Table Top', 'Super Early Bird Spinning Table Top', 2000);
+
+-- This should pass now as project has reached funding goal
+CALL create_feedback('Spinning Table Top', 'This is the most awesome project I have ever backed', 3, 'test@test.com');
