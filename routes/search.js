@@ -15,7 +15,6 @@ const pool = new Pool({
 });
 
 router.post("/", function(req, res, next) {
-  console.log("at login");
   var email = req.body.email;
   var search_text = req.body.search_text;
   const query = `CALL search('${email}','${search_text}')`;
@@ -27,4 +26,28 @@ router.post("/", function(req, res, next) {
     }
   });
 });
+
+router.get("/:email", function(req, res, next) {
+  const query = `SELECT * FROM SearchHistory NATURAL JOIN SEARCHES WHERE email='${req.params.email}';`;
+  pool.query(query, (error, data) => {
+    if (error) {
+      res.send(error);
+    } else {
+      res.send(data.rows);
+    }
+  });
+});
+
+router.post("/clear", function(req, res, next) {
+  var email = req.body.email;
+  const query = `DELETE FROM Searches WHERE email='${email}';`;
+  pool.query(query, (error, data) => {
+    if (error) {
+      res.send(error);
+    } else {
+      res.send("success");
+    }
+  });
+});
+
 module.exports = router;
