@@ -42,4 +42,20 @@ router.get("/:email/backedProjects", function(req, res, next) {
     });
 });
 
+/* Delete a project. */
+router.delete("/deleteCreatedProject/:email/:project_name", function(req, res, next) {
+    const query = "DELETE FROM Projects AS P " +
+        "WHERE P.email = '" + req.params.email + "' AND " +
+        "P.project_name = '" + req.params.project_name + "'";
+    ;
+    console.log(query)
+    pool.query(query, (error, data) => {
+        if (error) {
+            res.status(500).send("Internal server error when retrieving project");
+        } else {
+            res.status(200).send("Deleted project " + req.body);
+        }
+    });
+});
+
 module.exports = router;
