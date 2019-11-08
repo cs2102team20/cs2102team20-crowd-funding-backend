@@ -315,4 +315,9 @@ router.get("/:name/islike/:email", function(req, res) {
   });
 });
 
+// Function to donate
+router.put("/donate", function(req, res) {
+  const query = `SELECT * backsNoReward('useremail', 'project_name', 'donate_amount')`;
+});
+
 module.exports = router;
