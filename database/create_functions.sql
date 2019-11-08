@@ -54,6 +54,15 @@ BEGIN
             /* if new new amount is more, need to check if wallet has sufficient cash */
             IF (wallet_sufficient(user_email, backs_amount)) THEN
                 RAISE NOTICE 'donated and has sufficient amount';
+                /* Transfer from backer's wallet to project */
+                UPDATE Wallets
+                    SET amount = (SELECT amount - backs_amount + old_donated_amount
+                                    FROM Wallets WHERE email=user_email)
+                    WHERE
+                        Wallets.email=user_email;
+
+                /* Update donation */
+                PERFORM updateDonation(user_email, project_backed_name, old_donated_amount, backs_amount);
                 RETURN true;
             END IF;
         ELSE
