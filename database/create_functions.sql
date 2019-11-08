@@ -43,11 +43,43 @@ CREATE OR REPLACE FUNCTION backsNoReward (
 AS $$
 DECLARE
     backs_transaction_id integer DEFAULT 0;
+    old_donated_amount numeric;
 BEGIN
+    IF (hasDonated(user_email, project_backed_name)) THEN
+
+        SELECT amount INTO old_donated_amount FROM priorDonation(user_email, project_backed_name);
+        RAISE NOTICE 'old donated amount is %', old_donated_amount;
+
+        IF (backs_amount > old_donated_amount) THEN
+            /* if new new amount is more, need to check if wallet has sufficient cash */
+            IF (wallet_sufficient(user_email, backs_amount)) THEN
+                RAISE NOTICE 'donated and has sufficient amount';
+                RETURN true;
+            END IF;
+        ELSE
+            /* if new new amount is less, need to transfer money back to backer */
+            /* Return difference back to user */
+            RAISE NOTICE 'Returning %', (old_donated_amount - backs_amount);
+            RETURN true;
+        END IF;
+
+    ELSE
+        /* No prior donation made */
+        IF (wallet_sufficient(user_email, backs_amount)) THEN
+            RAISE NOTICE 'no donation made and has sufficient amount';
+            RETURN true;
+        ELSE
+            RAISE NOTICE 'no donation made and has insufficient amount';
+        END IF;
+    END IF;
+
+    RETURN false;
+
+    /*
     IF (wallet_sufficient(user_email, backs_amount)) THEN
         /* Handle transfer of credit */
         UPDATE Wallets
-            SET amount = (SELECT amount - backs_amount FROM Wallets WHERE email=user_email) 
+            SET amount = (SELECT amount - backs_amount FROM Wallets WHERE email=user_email)
             WHERE Wallets.email=user_email;
         UPDATE Projects
             SET project_current_funding = (SELECT project_current_funding + backs_amount FROM Projects WHERE Projects.project_name=project_backed_name)
@@ -57,7 +89,7 @@ BEGIN
         INSERT INTO Transactions (amount, transaction_date) VALUES
             (backs_amount::numeric(20,2), current_timestamp)
             RETURNING transaction_id INTO backs_transaction_id;
-        
+
         /* Insert new backing funds */
         INSERT INTO BackingFunds (transaction_id, email, project_name, reward_name) VALUES
             (backs_transaction_id, user_email, project_backed_name, null);
@@ -66,6 +98,20 @@ BEGIN
     ELSE
         RETURN FALSE;
     END IF;
+    */
+END; $$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION hasDonated(
+    backerEmail varchar(255),
+    projectName varchar(255)
+) RETURNS boolean
+AS $$
+DECLARE
+    has_donated boolean DEFAULT false;
+BEGIN
+    SELECT COUNT(*) > 0 INTO has_donated FROM priorDonation(backerEmail, projectName);
+    RETURN has_donated;
 END; $$
 LANGUAGE PLPGSQL;
 
@@ -84,6 +130,39 @@ BEGIN
             B.email = backerEmail
             AND
             B.project_name = projectName;
+END; $$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION updateDonation(
+    backerEmail varchar(255),
+    projectName varchar(255),
+    oldAmount numeric,
+    newAmount numeric
+) RETURNS boolean
+AS $$
+DECLARE
+    new_transaction_id integer DEFAULT 0;
+BEGIN
+    /* insert new transaction with negated amount from prior donation */
+    INSERT INTO Transactions (amount, transaction_date) VALUES
+        ((-oldAmount)::numeric(20,2), current_timestamp);
+
+    /* insert new transaction with new donation amount */
+    INSERT INTO Transactions (amount, transaction_date) VALUES
+        (newAmount::numeric(20,2), current_timestamp)
+        RETURNING transaction_id INTO new_transaction_id;
+
+    /* update prior entry in backingfunds - transaction_id */
+    UPDATE Backingfunds
+        SET transaction_id = new_transaction_id
+        WHERE
+            Backingfunds.project_name = projectName
+            AND
+            Backingfunds.email = backerEmail
+            AND
+            Backingfunds.reward_name IS NULL;
+
+    RETURN true;
 END; $$
 LANGUAGE PLPGSQL;
 
