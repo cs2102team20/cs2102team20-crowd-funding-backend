@@ -69,6 +69,24 @@ BEGIN
 END; $$
 LANGUAGE PLPGSQL;
 
+CREATE OR REPLACE FUNCTION priorDonation(
+    backerEmail varchar(255),
+    projectName varchar(255)
+) RETURNS TABLE (transaction_id integer, amount numeric(20,2), backer_email varchar(255), project_name varchar(255))
+AS $$
+BEGIN
+    RETURN QUERY
+        SELECT T.transaction_id, T.amount, B.email, B.project_name FROM Transactions AS T
+        NATURAL JOIN Backingfunds AS B
+        WHERE
+            B.reward_name IS NULL
+            AND
+            B.email = backerEmail
+            AND
+            B.project_name = projectName;
+END; $$
+LANGUAGE PLPGSQL;
+
 /* Ian's version of unback
 CREATE OR REPLACE FUNCTION unbacks (
     project_backed_name varchar(255),
