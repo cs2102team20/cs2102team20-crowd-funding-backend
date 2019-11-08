@@ -85,6 +85,10 @@ BEGIN
         /* No prior donation made */
         IF (wallet_sufficient(user_email, backs_amount)) THEN
             RAISE NOTICE 'no donation made and has sufficient amount';
+
+            /* Update reward (for donation) */
+            UPDATE rewards SET reward_pledge_amount = newAmount WHERE project_name = projectName AND reward_name IS NULL;
+
             /* Transfer funds from backer to project */
             UPDATE Wallets
                 SET amount = (SELECT amount - backs_amount
@@ -150,6 +154,9 @@ AS $$
 DECLARE
     new_transaction_id integer DEFAULT 0;
 BEGIN
+    /* Update reward (for donation) */
+    UPDATE rewards SET reward_pledge_amount = newAmount WHERE project_name = projectName AND reward_name IS NULL;
+
     /* insert new transaction with negated amount from prior donation */
     INSERT INTO Transactions (amount, transaction_date) VALUES
         ((-oldAmount)::numeric(20,2), current_timestamp);
