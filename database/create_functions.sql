@@ -65,10 +65,20 @@ BEGIN
                 PERFORM updateDonation(user_email, project_backed_name, old_donated_amount, backs_amount);
                 RETURN true;
             END IF;
-        ELSE
+        END IF;
+
+        IF (backs_amount < old_donated_amount) THEN
             /* if new new amount is less, need to transfer money back to backer */
             /* Return difference back to user */
             RAISE NOTICE 'Returning %', (old_donated_amount - backs_amount);
+            UPDATE Wallets
+                SET amount = (SELECT amount + old_donated_amount - backs_amount
+                               FROM Wallets WHERE email=user_email)
+                WHERE
+                    Wallets.email=user_email;
+
+            /* Update donation */
+             PERFORM updateDonation(user_email, project_backed_name, old_donated_amount, backs_amount);
             RETURN true;
         END IF;
 
