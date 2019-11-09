@@ -256,9 +256,6 @@ SELECT backs('abi@example.com', 'Triathlete Mouse', 'Family Set - 3 x Mouse', 90
 SELECT backs('abi@example.com', 'Triathlete Mouse', null, 3000);
 SELECT backs('babi@example.com', 'Triathlete Mouse', 'Family Set - 3 x Mouse', 90);
 SELECT backs('babi@example.com', 'Triathlete Mouse', null, 5000);
-
-update transactions set transaction_date = '2018-09-22 00:00:05' WHERE transaction_id >= 20 OR transaction_id <= 23;
-
 SELECT backs('test@test.com', 'Triathlete Mouse', 'Transfer from project to creator', 5000);
 
 -- This should fail as Triathelete Mouse is a project that belongs that to feedbacker.
@@ -277,3 +274,7 @@ SELECT backs('test@test.com', 'Spinning Table Top', 'Super Early Bird Spinning T
 
 -- This should pass now as project has reached funding goal
 CALL create_feedback('Spinning Table Top', 'This is the most awesome project I have ever backed', 3, 'test@test.com');
+
+-- Backtrack time of backing to simulate backing before deadline
+update transactions set transaction_date = '2018-08-22 00:00:05';
+
