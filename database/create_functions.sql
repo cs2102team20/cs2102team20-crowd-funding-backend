@@ -575,3 +575,45 @@ BEGIN
     END IF;
 END; $$
 LANGUAGE PLPGSQL;
+
+-- Function transfer funds from holding area (by GoGuru) to Creator.
+CREATE OR REPLACE FUNCTION transferBackingFundsToCreator(
+    creatorEmail varchar(255),
+    projectName varchar(255))
+RETURNS boolean
+AS $$
+DECLARE
+    _is_creator boolean := false;
+    _total_funding integer := 0;
+    _latest_transaction_id integer DEFAULT 0;
+
+BEGIN
+    -- Is creator?
+    SELECT (COUNT(*) > 0) INTO _is_creator FROM Projects WHERE project_name = projectName AND email = creatorEmail;
+    -- Is fully funded?
+    -- Has not collect funds yet?
+
+    SELECT * INTO _total_funding FROM project_current_funding(projectName);
+
+    IF (_is_creator = false) THEN
+        RAISE NOTICE 'IS NOT CREATOR';
+        RETURN false;
+    ELSE
+        RAISE NOTICE 'IS CREATOR';
+        RAISE NOTICE 'FUNDING IS: %', _total_funding;
+        -- create new transaction with new amount, note the transaction id
+        INSERT INTO Transactions (amount, transaction_date) VALUES
+            (_total_funding::numeric(20,2), current_timestamp)
+            RETURNING transaction_id INTO _latest_transaction_id;
+
+        -- Insert new backing funds
+        INSERT INTO BackingFunds (transaction_id, email, project_name, reward_name) VALUES
+            (_latest_transaction_id, creatorEmail, projectName, null);
+
+        -- Update creator wallet
+        UPDATE Wallets SET amount = (amount + _total_funding) WHERE email = creatorEmail;
+
+        RETURN true;
+    END IF;
+END; $$
+LANGUAGE PLPGSQL;
