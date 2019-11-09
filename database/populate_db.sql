@@ -250,10 +250,16 @@ SELECT backs('test@test.com', 'Medical Tissue Pro', 'Used Tissue (with flu)', 50
 SELECT backs('test@test.com', 'Medical Tissue Pro', 'Used Tissue (with chronic disease)', 5000);
 SELECT backs('test@test.com', 'Medical Tissue Pro', null, 200);
 SELECT backs('abi@example.com', 'Medical Tissue Pro', 'Used Tissue (with flu)', 3000);
-SELECT backs('abi@example.com', 'Spinning Table Top', 'Early Bird Spinning Table Top', 2000);
+SELECT backs('abi@example.com', 'Clown of the Night', 'Family Set - 3 x Mouse', 2000);
 SELECT backs('test@test.com', 'Spinning Table Top', 'Early Bird Spinning Table Top', 2000);
+SELECT backs('abi@example.com', 'Triathlete Mouse', 'Family Set - 3 x Mouse', 90);
+SELECT backs('abi@example.com', 'Triathlete Mouse', null, 3000);
 SELECT backs('babi@example.com', 'Triathlete Mouse', 'Family Set - 3 x Mouse', 90);
 SELECT backs('babi@example.com', 'Triathlete Mouse', null, 5000);
+
+update transactions set transaction_date = '2018-09-22 00:00:05' WHERE transaction_id >= 20 OR transaction_id <= 23;
+
+SELECT backs('test@test.com', 'Triathlete Mouse', 'Transfer from project to creator', 5000);
 
 -- This should fail as Triathelete Mouse is a project that belongs that to feedbacker.
 CALL create_feedback('Triathlete Mouse', 'This is the most awesome project I have ever backed', 4, 'test@test.com');
