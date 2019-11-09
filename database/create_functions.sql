@@ -459,7 +459,7 @@ $$ LANGUAGE plpgsql;
 
 -- Function to get all the project funding status
 CREATE OR REPLACE FUNCTION projectFundingStatus()
-RETURNS TABLE (project_name varchar(255), project_deadline timestamp, project_funding_goal integer,
+RETURNS TABLE (project_name varchar(255), email varchar(255), project_description text, project_image_url varchar(255), project_deadline timestamp, project_funding_goal integer,
 ended boolean, project_funding_received integer)
 AS $$
 BEGIN
@@ -476,23 +476,40 @@ END; $$
 LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION projectsStatusTemplate()
-RETURNS TABLE (project_name varchar(255), deadline timestamp, funding_goal integer, ended boolean, current_funding integer)
+RETURNS TABLE (project_name varchar(255), email varchar(255), project_description text, project_image_url varchar(255), deadline timestamp,
+funding_goal integer, ended boolean, current_funding integer)
 AS $$
 BEGIN
     RETURN QUERY
-        SELECT P.project_name, P.project_deadline, P.project_funding_goal, false AS ended, 0 AS current_funding
+        SELECT P.project_name, P.email, P.project_description, P.project_image_url, P.project_deadline, P.project_funding_goal, false AS ended, 0 AS current_funding
             FROM Projects AS P;
 END; $$
 LANGUAGE PLPGSQL;
 
 -- Function get all the funding status of projects created by the user
-CREATE OR REPLACE FUNCTION projectsByCreator(creatorEmail varchar(255))
-RETURNS TABLE (project_name varchar(255), ended boolean, project_funding_goal integer, project_funding_received integer)
+CREATE OR REPLACE FUNCTION projectsByUser(userEmail varchar(255))
+RETURNS TABLE (project_name varchar(255), email varchar(255), project_description text, project_image_url varchar(255),
+project_deadline timestamp, ended boolean, project_funding_goal integer, project_funding_received integer)
 AS $$
 BEGIN
     RETURN QUERY
-        SELECT P.project_name, PJS.ended, PJS.project_funding_goal, PJS.project_funding_received
+        SELECT P.project_name, P.email, P.project_description, P.project_image_url, P.project_deadline,
+            PJS.ended, PJS.project_funding_goal, PJS.project_funding_received
         FROM projectfundingstatus() AS PJS NATURAL JOIN Projects AS P
-        WHERE P.email = creatorEmail;
+        WHERE P.email = userEmail;
+END; $$
+LANGUAGE PLPGSQL;
+
+-- Function get all the funding status of projects created by the user
+CREATE OR REPLACE FUNCTION projectByName(projectName varchar(255))
+RETURNS TABLE (project_name varchar(255), email varchar(255), project_description text, project_image_url varchar(255),
+project_deadline timestamp, ended boolean, project_funding_goal integer, project_funding_received integer)
+AS $$
+BEGIN
+    RETURN QUERY
+        SELECT P.project_name, P.email, P.project_description, P.project_image_url, P.project_deadline,
+            PJS.ended, PJS.project_funding_goal, PJS.project_funding_received
+        FROM projectfundingstatus() AS PJS NATURAL JOIN Projects AS P
+        WHERE P.project_name = projectName;
 END; $$
 LANGUAGE PLPGSQL;
