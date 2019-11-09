@@ -471,7 +471,7 @@ BEGIN
             ended = (deadline < current_timestamp),
             current_funding = project_current_funding(temporaryprojects.project_name),
             received_funding_after_deadline = transactionAfterDeadlineExist(temporaryprojects.project_name),
-            funding_received_after_deadline = transactionAfterDeadlineIsValid(temporaryprojects.project_name);
+            funding_received_after_deadline_is_valid = transactionAfterDeadlineIsValid(temporaryprojects.project_name);
 
     RETURN QUERY SELECT * FROM temporaryprojects;
 END; $$
@@ -479,13 +479,13 @@ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION projectsStatusTemplate()
 RETURNS TABLE (project_name varchar(255), email varchar(255), project_description text, project_image_url varchar(255), deadline timestamp,
-funding_goal integer, ended boolean, current_funding integer, received_funding_after_deadline boolean, funding_received_after_deadline boolean)
+funding_goal integer, ended boolean, current_funding integer, received_funding_after_deadline boolean, funding_received_after_deadline_is_valid boolean)
 AS $$
 BEGIN
     RETURN QUERY
         SELECT P.project_name, P.email, P.project_description, P.project_image_url, P.project_deadline,
                 P.project_funding_goal, false AS ended, 0 AS current_funding, false AS received_funding_after_deadline,
-                false AS funding_received_after_deadline
+                false AS funding_received_after_deadline_is_valid
             FROM Projects AS P;
 END; $$
 LANGUAGE PLPGSQL;
@@ -494,12 +494,12 @@ LANGUAGE PLPGSQL;
 CREATE OR REPLACE FUNCTION projectsByUser(userEmail varchar(255))
 RETURNS TABLE (project_name varchar(255), email varchar(255), project_description text, project_image_url varchar(255),
 project_deadline timestamp, ended boolean, project_funding_goal integer, project_funding_received integer, received_funding_after_deadline boolean,
-funding_received_after_deadline boolean)
+funding_received_after_deadline_is_valid boolean)
 AS $$
 BEGIN
     RETURN QUERY
         SELECT P.project_name, P.email, P.project_description, P.project_image_url, P.project_deadline,
-            PJS.ended, PJS.project_funding_goal, PJS.project_funding_received, PJS.received_funding_after_deadline, PJS.funding_received_after_deadline
+            PJS.ended, PJS.project_funding_goal, PJS.project_funding_received, PJS.received_funding_after_deadline, PJS.funding_received_after_deadline_is_valid
         FROM projectfundingstatus() AS PJS NATURAL JOIN Projects AS P
         WHERE P.email = userEmail;
 END; $$
@@ -509,12 +509,12 @@ LANGUAGE PLPGSQL;
 CREATE OR REPLACE FUNCTION projectByName(projectName varchar(255))
 RETURNS TABLE (project_name varchar(255), email varchar(255), project_description text, project_image_url varchar(255),
 project_deadline timestamp, ended boolean, project_funding_goal integer, project_funding_received integer, received_funding_after_deadline boolean,
-funding_received_after_deadline boolean)
+funding_received_after_deadline_is_valid boolean)
 AS $$
 BEGIN
     RETURN QUERY
         SELECT P.project_name, P.email, P.project_description, P.project_image_url, P.project_deadline,
-            PJS.ended, PJS.project_funding_goal, PJS.project_funding_received, PJS.received_funding_after_deadline, PJS.funding_received_after_deadline
+            PJS.ended, PJS.project_funding_goal, PJS.project_funding_received, PJS.received_funding_after_deadline, PJS.funding_received_after_deadline_is_valid
         FROM projectfundingstatus() AS PJS NATURAL JOIN Projects AS P
         WHERE P.project_name = projectName;
 END; $$
