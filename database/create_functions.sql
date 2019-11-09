@@ -513,3 +513,30 @@ BEGIN
         WHERE P.project_name = projectName;
 END; $$
 LANGUAGE PLPGSQL;
+
+-- Function (for creator) to check if transaction after deadline for a spcific project exist
+CREATE OR REPLACE FUNCTION transactionAfterDeadlineExist(projectName varchar(255))
+RETURNS boolean
+AS $$
+DECLARE
+    _count integer := 0;
+BEGIN
+    SELECT COUNT(*) INTO _count
+    FROM (
+        SELECT X.backer_email, P.email AS creator_email,
+            X.project_name, X.amount, X.transaction_date, P.project_deadline
+        FROM (
+            SELECT B.email AS backer_email, T.transaction_id, T.transaction_date, B.project_name, T.amount
+            FROM transactions AS T inner join backingfunds AS B ON (T.transaction_id = B.transaction_id)) AS X
+                INNER JOIN Projects AS P ON (X.project_name = P.project_name)
+                WHERE X.project_name = projectName AND X.transaction_date > P.project_deadline) AS Z;
+
+    IF (_count > 0) THEN
+        RETURN true;
+    ELSE
+        RETURN false;
+    END IF;
+END; $$
+LANGUAGE PLPGSQL;
+
+-- Function (for creator) to check if transaction after deadline is equal to total fundings before deadline
