@@ -469,7 +469,8 @@ BEGIN
     UPDATE temporaryprojects
         SET
             ended = (deadline < current_timestamp),
-            current_funding = project_current_funding(temporaryprojects.project_name);
+            current_funding = project_current_funding(temporaryprojects.project_name),
+            received_funding_after_deadline = transactionAfterDeadlineExist(temporaryprojects.project_name);
 
     RETURN QUERY SELECT * FROM temporaryprojects;
 END; $$
