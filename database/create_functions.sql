@@ -456,3 +456,31 @@ BEGIN
     return total_refund;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function to get all the project funding status
+CREATE OR REPLACE FUNCTION projectFundingStatus()
+RETURNS TABLE (project_name varchar(255), project_deadline timestamp, project_funding_goal integer,
+ended boolean, project_funding_received integer)
+AS $$
+BEGIN
+    DROP TABLE IF EXISTS project_status_template;
+    CREATE TEMP TABLE temporaryprojects AS (SELECT * FROM projectsStatusTemplate());
+
+    UPDATE temporaryprojects
+        SET
+            ended = (deadline < current_timestamp),
+            current_funding = project_current_funding(temporaryprojects.project_name);
+
+    RETURN QUERY SELECT * FROM temporaryprojects;
+END; $$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION projectsStatusTemplate()
+RETURNS TABLE (project_name varchar(255), deadline timestamp, funding_goal integer, ended boolean, current_funding integer)
+AS $$
+BEGIN
+    RETURN QUERY
+        SELECT P.project_name, P.project_deadline, P.project_funding_goal, false AS ended, 0 AS current_funding
+            FROM Projects AS P;
+END; $$
+LANGUAGE PLPGSQL;
